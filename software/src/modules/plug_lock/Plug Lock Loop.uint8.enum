@@ -1,0 +1,37 @@
+# Verdict on the harness loop: Quad Relay channel 1 wired in series through
+# Digital In 4 channel 1 and back to the lock PSU. Toggling the relay and
+# watching the input follow proves that these two specific Bricklets are wired
+# to each other and to a lock supply. Device discovery alone proves only that
+# some Quad Relay and some Digital In 4 are plugged in, which any user with
+# unrelated Bricklets would satisfy.
+#
+# Verified is what gets reported to the EVSE as "bricklet dedication verified".
+# It is the arming signal for enabling the feature. Note the direction: anything
+# other than Verified means the dedication could not be proven, not that the
+# Bricklets are unrelated - a dead lock PSU produces Fail Open with both
+# Bricklets still fitted. Only Bricklets Not Found says anything about whether
+# the hardware is there.
+#
+# Challenging is the release phase in progress. The reported verdict is held
+# across it, because the loop legitimately reads low while the relay is open.
+#
+# The three failures are kept apart because they mean different things, and
+# conflating the first two is what made the disable gate unsound in the first
+# place.
+#
+# Fail Open is a loop that will not close with the relay energized: a cut link,
+# a dead lock supply, a loose DC connector. Both Bricklets are still there.
+#
+# Fail Stuck is a loop that stays high with the relay released - a welded
+# contact, a reversed relay channel whose body diode conducts, or a strap tied
+# across the input to fake the marker.
+#
+# Bricklets Not Found means discovery came up empty, so there is nothing to run
+# a challenge against. Appended as 5 rather than inserted, so the existing
+# values keep their meaning.
+Unknown = 0
+Challenging = 1
+Verified = 2
+Fail Open = 3
+Fail Stuck = 4
+Bricklets Not Found = 5

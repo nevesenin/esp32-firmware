@@ -213,6 +213,12 @@ public:
     int set_ove_r37_configuration(bool enabled, uint16_t undervoltage_threshold, uint16_t undervoltage_observation_time, uint16_t reconnect_wait_time, uint16_t start_delay);
     int get_ove_r37_status(uint8_t *ret_state, uint8_t *ret_trip_reason, uint8_t *ret_flags);
 
+    // Plug lock (Type 2 plug locking, WARP4 only)
+    int get_plug_lock_configuration(bool *ret_enabled);
+    int set_plug_lock_configuration(bool enabled);
+    int set_plug_lock_hardware_state(bool bricklet_dedication_verified, bool bricklets_not_found, bool lock_closed, bool lock_fault, bool shutting_down, bool still_starting_up);
+    int get_plug_lock_state(uint8_t *ret_state, bool *ret_lock_wanted);
+
     bool is_shutdown_input_closed();
 
 private:

@@ -186,6 +186,16 @@ void EVSEV2::post_setup()
     // We use '!' for empty character
     is_in_bootloader(io_scheduler.hal_call([this]() { return tf_evse_v2_set_energy_meter_display_text(&device, "!!!!!!!!", "!!!!"); }));
 
+    // The EVSE refuses this write in both directions (communication.c:1355-1377) and the
+    // refusal is the whole user-visible error path, so it has to come back as an error
+    // rather than be dropped. Without this the setter is fire-and-forget: the bindings
+    // leave response_expected off for it, so it always returns TF_E_OK and the
+    // TF_E_INVALID_PARAMETER branch in the plug_lock module is unreachable.
+    //
+    // Only this setter. set_plug_lock_hardware_state() is a per-tick heartbeat and must
+    // not wait for an acknowledgement.
+    tf_evse_v2_set_response_expected(&device, TF_EVSE_V2_FUNCTION_SET_PLUG_LOCK_CONFIGURATION, true);
+
     task_scheduler.scheduleOnce([this](){
         uint32_t press_time = 0;
         io_scheduler.hal_call([this, &press_time]() { return tf_evse_v2_get_button_press_boot_time(&device, true, &press_time); });
@@ -444,6 +454,26 @@ int EVSEV2::set_ove_r37_configuration(bool enabled, uint16_t undervoltage_thresh
 int EVSEV2::get_ove_r37_status(uint8_t *ret_state, uint8_t *ret_trip_reason, uint8_t *ret_flags)
 {
     return io_scheduler.hal_call([&]() { return tf_evse_v2_get_ove_r37_status(&device, ret_state, ret_trip_reason, ret_flags); });
+}
+
+int EVSEV2::get_plug_lock_configuration(bool *ret_enabled)
+{
+    return io_scheduler.hal_call([&]() { return tf_evse_v2_get_plug_lock_configuration(&device, ret_enabled); });
+}
+
+int EVSEV2::set_plug_lock_configuration(bool enabled)
+{
+    return io_scheduler.hal_call([&]() { return tf_evse_v2_set_plug_lock_configuration(&device, enabled); });
+}
+
+int EVSEV2::set_plug_lock_hardware_state(bool bricklet_dedication_verified, bool bricklets_not_found, bool lock_closed, bool lock_fault, bool shutting_down, bool still_starting_up)
+{
+    return io_scheduler.hal_call([&]() { return tf_evse_v2_set_plug_lock_hardware_state(&device, bricklet_dedication_verified, bricklets_not_found, lock_closed, lock_fault, shutting_down, still_starting_up); });
+}
+
+int EVSEV2::get_plug_lock_state(uint8_t *ret_state, bool *ret_lock_wanted)
+{
+    return io_scheduler.hal_call([&]() { return tf_evse_v2_get_plug_lock_state(&device, ret_state, ret_lock_wanted); });
 }
 
 int EVSEV2::register_eichrecht_dataset_callback(TF_EVSEV2_EichrechtDatasetHandler handler, char *message, void *user_data)

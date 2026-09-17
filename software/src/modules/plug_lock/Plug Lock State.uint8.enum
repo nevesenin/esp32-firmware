@@ -1,0 +1,10 @@
+# Mirrors PlugLockState in evse-v2-bricklet/software/src/plug_lock.h and the
+# "Plug Lock State" constant group of the EVSE V2 bindings. The EVSE is the
+# owner of this value; we only report what it tells us.
+Disabled = 0
+Bricklet Dedication Not Verified = 1
+Idle = 2
+Waiting = 3
+Locked = 4
+Fault Timeout = 5
+Fault Lock = 6

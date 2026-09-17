@@ -1,0 +1,14 @@
+# The state of this side's lock actuation, distinct from Plug Lock State, which is
+# the EVSE's own view and is only mirrored here.
+#
+# The two fault directions are deliberately not one value. Failing to *lock* leaves
+# a plug that may be loose while the socket is live, so it blocks energizing.
+# Failing to *unlock* leaves the plug stuck locked, which is the safe state; it is
+# reported and logged but never blocks charging.
+Inactive = 0
+Unlocked = 1
+Locking = 2
+Locked = 3
+Unlocking = 4
+Lock Fault = 5
+Unlock Fault = 6

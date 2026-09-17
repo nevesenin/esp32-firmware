@@ -1,5 +1,5 @@
 /* ***********************************************************
- * This file was automatically generated on 2026-07-27.      *
+ * This file was automatically generated on 2026-09-13.      *
  *                                                           *
  * C/C++ for Microcontrollers Bindings Version 2.0.4         *
  *                                                           *
@@ -436,6 +436,26 @@ typedef struct TF_EVSEV2 {
 /**
  * \ingroup TF_EVSEV2
  */
+#define TF_EVSE_V2_FUNCTION_SET_PLUG_LOCK_CONFIGURATION 78
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_FUNCTION_GET_PLUG_LOCK_CONFIGURATION 79
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_FUNCTION_SET_PLUG_LOCK_HARDWARE_STATE 80
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_FUNCTION_GET_PLUG_LOCK_STATE 81
+
+/**
+ * \ingroup TF_EVSEV2
+ */
 #define TF_EVSE_V2_FUNCTION_GET_SPITFP_ERROR_COUNT 234
 
 /**
@@ -661,6 +681,11 @@ typedef struct TF_EVSEV2 {
  * \ingroup TF_EVSEV2
  */
 #define TF_EVSE_V2_ERROR_STATE_COMMUNICATION 5
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_ERROR_STATE_PLUG_LOCK 6
 
 /**
  * \ingroup TF_EVSEV2
@@ -1571,6 +1596,41 @@ typedef struct TF_EVSEV2 {
  * \ingroup TF_EVSEV2
  */
 #define TF_EVSE_V2_OVE_R37_FLAGS_FREQUENCY_VALID 16
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_DISABLED 0
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_BRICKLET_DEDICATION_NOT_VERIFIED 1
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_IDLE 2
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_WAITING 3
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_LOCKED 4
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_FAULT_TIMEOUT 5
+
+/**
+ * \ingroup TF_EVSEV2
+ */
+#define TF_EVSE_V2_PLUG_LOCK_STATE_FAULT_LOCK 6
 
 /**
  * \ingroup TF_EVSEV2
@@ -2576,6 +2636,157 @@ int tf_evse_v2_set_energy_meter_display_backlight(TF_EVSEV2 *evse_v2, uint8_t ba
  * Returns the backlight mode as set by {@link tf_evse_v2_set_energy_meter_display_backlight}.
  */
 int tf_evse_v2_get_energy_meter_display_backlight(TF_EVSEV2 *evse_v2, uint8_t *ret_backlight);
+
+/**
+ * \ingroup TF_EVSEV2
+ *
+ * Enables or disables the Type 2 plug lock. The setting is persistent.
+ *
+ * The plug lock is driven by an Industrial Quad Relay Bricklet 2.1 and an
+ * Industrial Digital In 4 Bricklet 2.0 that are connected to the charger's
+ * ESP32, not to the EVSE itself. Enabling is therefore only accepted while a
+ * fresh hardware report is present, see {@link tf_evse_v2_set_plug_lock_hardware_state}.
+ * Without one this function returns an invalid parameter error.
+ *
+ * Enabling is also refused while the contactor is not confirmed to be open,
+ * because the plug cannot already be locked at that moment and charging would
+ * be stopped immediately. Stop the charging session first.
+ *
+ * Disabling is refused unless the last hardware report says that **neither**
+ * bricklet could be found. A wallbox whose socket is wired for a lock but has it
+ * switched off would energize with a removable plug, so switching it off requires
+ * unplugging both bricklets inside the enclosure first.
+ *
+ * A broken harness loop is deliberately *not* enough. The loop is also de-asserted
+ * when the lock supply fails while both bricklets are still fitted, so accepting a
+ * disable on a missing loop would let a blown fuse open a path that is meant to
+ * need someone at the enclosure. Bricklet discovery is the only signal here that
+ * distinguishes the two.
+ *
+ * No report at all - a charge controller talking to nothing - refuses both
+ * directions, because every gate here requires positive evidence rather than the
+ * absence of a complaint.
+ *
+ * Note what this does and does not protect against. It is a guard against
+ * accidents, hardware faults and confusion; it is not a security boundary. This
+ * function and {@link tf_evse_v2_set_plug_lock_hardware_state} are reachable through the same
+ * proxy, so a caller who can already speak to this device can assert either. Use an
+ * authenticated proxy if that matters.
+ *
+ * While the plug lock is enabled and the harness loop is missing or stops being
+ * reported, charging is blocked with error state 6 (Plug Lock).
+ *
+ * This is currently only supported on WARP4.
+ */
+int tf_evse_v2_set_plug_lock_configuration(TF_EVSEV2 *evse_v2, bool enabled);
+
+/**
+ * \ingroup TF_EVSEV2
+ *
+ * Returns the configuration as set by {@link tf_evse_v2_set_plug_lock_configuration}.
+ */
+int tf_evse_v2_get_plug_lock_configuration(TF_EVSEV2 *evse_v2, bool *ret_enabled);
+
+/**
+ * \ingroup TF_EVSEV2
+ *
+ * Reports the state of the plug lock hardware. The EVSE cannot see the
+ * bricklets itself, so this has to be asserted from the outside.
+ *
+ * *Bricklet Dedication Verified* means the harness loop was checked and passed,
+ * not merely that two bricklets answered. The loop is a spare relay channel wired
+ * in series through a spare input channel and back to the lock supply; the caller
+ * toggles it and checks that the input follows. Device discovery alone would be
+ * satisfied by any unrelated pair of these bricklets, whereas the loop proves that
+ * these two specific devices are dedicated to this lock - wired to each other and
+ * to a lock supply. Because it is a wire, nothing reachable over the network can
+ * assert it.
+ *
+ * Note the direction of the claim: *false* means the dedication could not be
+ * verified, not that the bricklets are unrelated. A failure of the lock supply
+ * de-asserts it while both bricklets are still fitted.
+ *
+ * *Bricklets Not Found* is the separate question of whether the two bricklets are
+ * discoverable at all, and it is the *only* thing here that answers it. It is true
+ * only when **neither** of them was found; one remaining bricklet is a partly
+ * disassembled lock, not a removed one. It exists because a de-asserted dedication
+ * does not distinguish "the lock was removed" from "the lock supply failed", and
+ * {@link tf_evse_v2_set_plug_lock_configuration} has to tell those apart before it may accept
+ * being switched off.
+ *
+ * The polarity is chosen so that the restrictive answer is the one a zero byte
+ * gives: an unset field reads as *found*, which refuses the disable.
+ *
+ * *Lock Closed* is the debounced feedback input, not a conclusion drawn from a
+ * state machine: it means the feedback contact currently says the plug is
+ * locked.
+ *
+ * *Lock Fault* means an attempt to **lock** the plug failed. A failure to
+ * *unlock* must not be reported here: a plug that is stuck locked is in the safe
+ * state, and blocking charging over it would help nobody.
+ *
+ * *Shutting Down* announces that the caller is about to restart on purpose.
+ * While it is set the EVSE selects IEC 61851 state B over state C, which releases
+ * the contactor while leaving the plug connected and the PWM running - the same
+ * thing it does when no current is allowed. Charging therefore stops the ordinary
+ * way rather than through an error state.
+ *
+ * It interrupts charging rather than ending the session: nothing records that a
+ * session was stopped, so once the caller clears the flag and the vehicle is still
+ * asking to charge, charging resumes by itself. What the field guarantees is that
+ * the contactor is open for as long as the caller is away. It is not a one-shot: the last
+ * value reported stands for the whole of the caller's absence, and the caller
+ * clears it by reporting *false* again once it is back.
+ *
+ * It exists so that a contactor found closed with no report is unambiguously an
+ * anomaly, rather than the normal outcome of every restart. Note that it can only
+ * make the charger more restrictive: a caller that crashes, is powered off or is
+ * reset without sending it simply falls through to the staleness handling below,
+ * so there is nothing to be gained by withholding it.
+ *
+ * *Still Starting Up* says that the caller has not yet had the chance to reach a
+ * verdict on the harness loop, so a *Bricklet Dedication Verified* of *false*
+ * means "not yet" rather than "checked and broken". Without it the two are
+ * indistinguishable on the wire - both are a plain *false* - and the first
+ * seconds of every start-up would be reported as a failure.
+ *
+ * It can only delay the resulting error, never prevent it: the EVSE stops
+ * believing the claim after its own timeout regardless of what the caller keeps
+ * saying. Clear it as soon as a verdict exists, and note the polarity - an unset
+ * field reads as *settled*, which is the strict answer.
+ *
+ * This call doubles as a heartbeat: the report goes stale after 5 seconds and
+ * is then treated as "not verified". Call it at least once per second while the
+ * plug lock is in use.
+ *
+ * At least one report must have arrived before
+ * {@link tf_evse_v2_set_plug_lock_configuration} will accept ``enabled`` = *true*.
+ */
+int tf_evse_v2_set_plug_lock_hardware_state(TF_EVSEV2 *evse_v2, bool bricklet_dedication_verified, bool bricklets_not_found, bool lock_closed, bool lock_fault, bool shutting_down, bool still_starting_up);
+
+/**
+ * \ingroup TF_EVSEV2
+ *
+ * Returns the current state of the plug lock.
+ *
+ * *Lock Wanted* is the EVSE's decision on whether the plug has to be locked
+ * right now, and it is the input the charger's lock state machine acts on. It is
+ * true while a vehicle is detected or while the contactor is not confirmed to be
+ * open, so the plug is never released while the socket might still be live.
+ *
+ * *Disabled* means the plug lock is not activated, or the EVSE is not hardware
+ * version 4. *Bricklet Dedication Not Verified* means the harness loop is not
+ * verified or its report has gone stale; note that this does not mean the
+ * bricklets are gone, since a failure of the lock supply de-asserts the loop while
+ * both are still fitted. *Idle* means the plug does not need to be locked,
+ * *Waiting* that it does but is not confirmed locked yet, *Locked* that it is.
+ * *Fault Timeout* means the plug did not lock in time and *Fault Lock* that the
+ * charger reported a failed lock attempt.
+ *
+ * Charging is blocked in *Bricklet Dedication Not Verified*, *Fault Timeout* and
+ * *Fault Lock*, all reported as error state 6.
+ */
+int tf_evse_v2_get_plug_lock_state(TF_EVSEV2 *evse_v2, uint8_t *ret_state, bool *ret_lock_wanted);
 
 /**
  * \ingroup TF_EVSEV2
